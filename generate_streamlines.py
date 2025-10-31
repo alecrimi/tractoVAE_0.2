@@ -55,6 +55,7 @@ def generate_dti_streamlines(nifti_file="data.nii.gz", bval_file="bvals", bvec_f
     # 5. Stopping criterion & seeds
     # ------------------------
     stopping_criterion = ThresholdStoppingCriterion(fa, 0.2)
+    #Change the density to increase the number of tracts
     seeds = utils.seeds_from_mask(mask, affine, density=8)
     
     # ------------------------
@@ -74,8 +75,8 @@ def generate_dti_streamlines(nifti_file="data.nii.gz", bval_file="bvals", bvec_f
     # ------------------------
     # 7. Remove short tracts (<30mm)
     # ------------------------
-    streamlines = [sl for sl in streamlines if length(sl) > 30]
-    
+    streamlines = [sl for sl in streamlines if length(np.array(sl)) > 30]
+
     # ------------------------
     # 8. Save streamlines in TrackVis format
     # ------------------------
