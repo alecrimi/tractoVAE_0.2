@@ -77,7 +77,7 @@ def generate_dti_streamlines(nifti_file="data.nii.gz", bval_file="bvals", bvec_f
     # ------------------------
     stopping_criterion = ThresholdStoppingCriterion(fa, 0.2)
     #Change the density to increase the number of tracts
-    seeds = utils.seeds_from_mask(mask, affine, density=8)
+    seeds = utils.seeds_from_mask(mask, affine, density=1)
     
     # ------------------------
     # 6. Run tractography
