@@ -75,7 +75,8 @@ def generate_dti_streamlines(nifti_file="data.nii.gz", bval_file="bvals", bvec_f
     # ------------------------
     # 7. Remove short tracts (<30mm)
     # ------------------------
-    streamlines = [sl for sl in streamlines if length(np.array(sl)) > 30]
+    #streamlines = [sl for sl in streamlines if length(np.array(sl)) > 30]
+    streamlines = [sl for sl in streamlines if np.sum(length(sl)) > 30]
 
     # ------------------------
     # 8. Save streamlines in TrackVis format
