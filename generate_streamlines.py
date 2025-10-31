@@ -1,5 +1,6 @@
 import numpy as np
 import nibabel as nib
+from nibabel.streamlines import Tractogram, TrkFile
 from dipy.segment.mask import median_otsu
 from dipy.core.gradients import gradient_table
 from dipy.io.gradients import read_bvals_bvecs
@@ -22,6 +23,26 @@ def generate_dti_streamlines(nifti_file="data.nii.gz", bval_file="bvals", bvec_f
     data, affine = load_nifti(nifti_file)
     img = nib.load(nifti_file)
     bvals, bvecs = read_bvals_bvecs(bval_file, bvec_file)
+
+    #bvecs might be misalligned
+    if bvecs.shape[0] == 3:
+        print("flipped bvec")
+        bvecs = bvecs.T
+    bvecs[:, 1] = -bvecs[:, 1]
+
+    ###############Image checks
+    '''
+    # Check current orientation
+    img = nib.load(nifti_file)
+    print(f"Image orientation: {nib.aff2axcodes(img.affine)}")
+    # Should typically be ('R', 'A', 'S') or ('L', 'A', 'S')
+
+    # If needed, reorient to RAS:
+    img_reoriented = nib.as_closest_canonical(img)
+    data = img_reoriented.get_fdata()
+    affine = img_reoriented.affine
+    '''
+
     gtab = gradient_table(bvals=bvals, bvecs=bvecs)  # keyword args
     
     # ------------------------
@@ -71,26 +92,17 @@ def generate_dti_streamlines(nifti_file="data.nii.gz", bval_file="bvals", bvec_f
     
     streamlines = Streamlines(streamline_generator)
     streamlines = list(streamlines)
-    
-    # ------------------------
-    # 7. Remove short tracts (<30mm)
-    # ------------------------
-    #streamlines = [sl for sl in streamlines if length(np.array(sl)) > 30]
-    streamlines = [sl for sl in streamlines if np.sum(length(sl)) > 30]
+     
 
     # ------------------------
     # 8. Save streamlines in TrackVis format
     # ------------------------
-    hdr = nib.trackvis.empty_header()
-    hdr['voxel_size'] = img.header.get_zooms()[:3]
-    hdr['voxel_order'] = 'LAS'
-    hdr['dim'] = tuple(int(i) for i in fa.shape)
-    
-    tensor_streamlines_trk = ((sl, None, None) for sl in streamlines)
-    ten_sl_fname = 'dti_streamlines.trk'
-    nib.trackvis.write(ten_sl_fname, tensor_streamlines_trk, hdr, points_space='voxel')
-    
-    print(f"Saved {len(streamlines)} streamlines to {ten_sl_fname}")
+    tractogram = Tractogram(streamlines, affine_to_rasmm=np.eye(4))
+    trk_file = TrkFile(tractogram, header={'voxel_size': img.header.get_zooms()[:3]})
+
+    # Save
+    trk_file.save('dti_MRI_streamlines.trk') 
+
     return streamlines
 
 if __name__ == "__main__":
